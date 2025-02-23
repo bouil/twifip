@@ -31,8 +31,7 @@ impl Track {
     ) -> Option<Track> {
         if title.contains("BONNE NUIT SUR FIP")
             || title.contains("FIP ACTUALITE")
-            || (artist.eq("La radio la plus éclectique du monde")
-                && album.clone().map(|a| a.eq("Le direct")).unwrap_or(false))
+            || (artist.eq("La radio la plus éclectique du monde") && title.eq("Le direct") &&  album.is_none())
         {
             // ignore track
             None
@@ -83,8 +82,8 @@ mod tests {
     fn test_ignored_track_2() {
         let track = Track::create(
             String::from("La radio la plus éclectique du monde"),
-            String::from("Title"),
-            Some(String::from("Le direct")),
+            String::from("Le direct"),
+            None,
             1740168451,
         );
 
@@ -95,7 +94,7 @@ mod tests {
     fn test_not_ignored_track() {
         let track = Track::create(
             String::from("La radio la plus éclectique du monde"),
-            String::from("Title"),
+            String::from("Le direct"),
             Some(String::from("Some album")),
             1740168451,
         );
