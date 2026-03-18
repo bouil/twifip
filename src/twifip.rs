@@ -4,15 +4,12 @@ use log::{error, info};
 use rustfm_scrobble_proxy::responses::ScrobbleResponse;
 use rustfm_scrobble_proxy::{Scrobble, Scrobbler};
 use std::error::Error;
+use crate::fip_reader::read_fip;
 use crate::track_store::TrackStore;
 
-pub trait TrackScrobbler {
-    fn scrobble_track(&self, track: &Track) -> Result<ScrobbleResponse, Box<dyn Error>>;
-}
-
 pub struct Twifip {
-    pub scrobbler: Scrobbler,
-    pub track_store: TrackStore
+    scrobbler: Scrobbler,
+    track_store: TrackStore
 }
 
 impl Twifip {
@@ -31,16 +28,29 @@ impl Twifip {
             track_store
         })
     }
-}
 
-impl TrackScrobbler for Scrobbler {
+    pub fn check_and_scrobble(self: &Self) {
+        let track_result = read_fip();
+
+        match track_result {
+            Ok(track) => {
+                if self.track_store.is_new_track(&track) {
+                    let _ = self.scrobble_track(&track);
+                }
+            }
+            Err(err) => {
+                log::error!("{}", err)
+            }
+        }
+    }
+
     fn scrobble_track(self: &Self, track: &Track) -> Result<ScrobbleResponse, Box<dyn Error>> {
         info!("{:?}", track);
 
         let artist = track.artist.as_str();
         let song = track.title.as_str();
         let song = Scrobble::new(artist, song, track.album.as_deref());
-        let result = self.scrobble(&song);
+        let result = self.scrobbler.scrobble(&song);
 
         match result {
             Ok(scrobble_response) => {

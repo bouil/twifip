@@ -1,4 +1,4 @@
-use crate::lastfm::Twifip;
+use crate::twifip::Twifip;
 use crate::schedule::schedule_jobs;
 use dotenvy::dotenv;
 use log::{error, info};
@@ -6,7 +6,7 @@ use std::error::Error;
 use tokio::signal;
 
 mod fip_reader;
-mod lastfm;
+mod twifip;
 mod logging_setup;
 mod schedule;
 mod track;

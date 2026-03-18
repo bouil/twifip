@@ -54,6 +54,7 @@ impl fmt::Display for FipError {
 }
 
 pub(crate) fn read_fip() -> Result<Track, Box<dyn Error>> {
+    // check if https://api.radiofrance.fr/livemeta/live/7/transistor_musical_player contains interesting data too during the nights (Club Jazzafip, etc))
     let url = "https://www.radiofrance.fr/fip/api/live";
     let response = attohttpc::get(url).send()?;
     if response.is_success() {

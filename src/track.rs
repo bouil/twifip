@@ -31,7 +31,9 @@ impl Track {
     ) -> Option<Track> {
         if title.contains("BONNE NUIT SUR FIP")
             || title.contains("FIP ACTUALITE")
-            || (artist.eq("La radio la plus éclectique du monde") && title.eq("Le direct") &&  album.is_none())
+            || (artist.eq("La radio la plus éclectique du monde")
+                && title.eq("Le direct")
+                && album.is_none())
         {
             // ignore track
             None

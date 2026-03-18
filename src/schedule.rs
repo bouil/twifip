@@ -1,8 +1,7 @@
 use std::env;
 use log::info;
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
-use crate::fip_reader::read_fip;
-use crate::lastfm::{TrackScrobbler, Twifip};
+use crate::twifip::Twifip;
 
 pub async fn schedule_jobs(twifip: Twifip) -> Result<(), JobSchedulerError> {
     info!("Scheduling jobs");
@@ -24,20 +23,7 @@ pub async fn schedule_jobs(twifip: Twifip) -> Result<(), JobSchedulerError> {
     info!("Starting job with cron expression: {}", cron_expression);
     sched
         .add(Job::new(cron_expression, move |_uuid, _l| {
-            let track_result = read_fip();
-
-            match track_result {
-                Ok(track) => {
-                    if twifip.track_store.is_new_track(&track) {
-                        let _ = twifip.scrobbler.scrobble_track(&track);
-                    }
-                }
-                Err(err) => {
-                    log::error!("{}", err)
-                }
-            }
-
-            ();
+            twifip.check_and_scrobble();
         })?)
         .await?;
 
