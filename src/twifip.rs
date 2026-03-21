@@ -15,10 +15,10 @@ pub struct Twifip {
 impl Twifip {
     pub fn new() -> Result<Twifip, Box<dyn Error>> {
         info!("Initializing Lastfm");
-        let username = env::var("LASTFM_USERNAME").expect("Missing ENV variable LASTFM_USERNAME");
-        let password = env::var("LASTFM_PASSWORD").expect("Missing ENV variable LASTFM_PASSWORD");
-        let api_key = env::var("LASTFM_API_KEY").expect("Missing ENV variable LASTFM_API_KEY");
-        let api_secret = env::var("LASTFM_API_SECRET").expect("Missing ENV variable LASTFM_API_SECRET");
+        let username = env::var("LASTFM_USERNAME").map_err(|_| "Missing ENV variable LASTFM_USERNAME")?;
+        let password = env::var("LASTFM_PASSWORD").map_err(|_| "Missing ENV variable LASTFM_PASSWORD")?;
+        let api_key = env::var("LASTFM_API_KEY").map_err(|_| "Missing ENV variable LASTFM_API_KEY")?;
+        let api_secret = env::var("LASTFM_API_SECRET").map_err(|_| "Missing ENV variable LASTFM_API_SECRET")?;
         info!("Loaded env vars. Using user {}", username);
         let mut scrobbler = Scrobbler::new(&*api_key, &*api_secret);
         scrobbler.authenticate_with_password(&*username, &*password)?;
@@ -70,5 +70,22 @@ impl Twifip {
                 Err(Box::try_from(error).unwrap())
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_returns_err_when_env_vars_missing() {
+        env::remove_var("LASTFM_USERNAME");
+        env::remove_var("LASTFM_PASSWORD");
+        env::remove_var("LASTFM_API_KEY");
+        env::remove_var("LASTFM_API_SECRET");
+
+        let result = Twifip::new();
+        assert!(result.is_err());
+        assert!(result.err().unwrap().to_string().contains("LASTFM_USERNAME"));
     }
 }
