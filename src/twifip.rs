@@ -77,6 +77,10 @@ impl Twifip {
 mod tests {
     use super::*;
 
+    // Compile-time assertion: Twifip must be Send + 'static for spawn_blocking
+    fn _assert_send_static<T: Send + 'static>() {}
+    fn _assert_twifip_send_static() { _assert_send_static::<Twifip>(); }
+
     #[test]
     fn test_new_returns_err_when_env_vars_missing() {
         env::remove_var("LASTFM_USERNAME");

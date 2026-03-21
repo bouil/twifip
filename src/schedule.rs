@@ -1,9 +1,11 @@
 use std::env;
+use std::sync::Arc;
 use log::info;
+use tokio::task;
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 use crate::twifip::Twifip;
 
-pub async fn schedule_jobs(twifip: Twifip) -> Result<(), JobSchedulerError> {
+pub async fn schedule_jobs(twifip: Arc<Twifip>) -> Result<(), JobSchedulerError> {
     info!("Scheduling jobs");
 
     let mut sched = JobScheduler::new().await?;
@@ -22,8 +24,13 @@ pub async fn schedule_jobs(twifip: Twifip) -> Result<(), JobSchedulerError> {
 
     info!("Starting job with cron expression: {}", cron_expression);
     sched
-        .add(Job::new(cron_expression, move |_uuid, _l| {
-            twifip.check_and_scrobble();
+        .add(Job::new_async(cron_expression, move |_uuid, _l| {
+            let twifip = Arc::clone(&twifip);
+            Box::pin(async move {
+                task::spawn_blocking(move || twifip.check_and_scrobble())
+                    .await
+                    .ok();
+            })
         })?)
         .await?;
 

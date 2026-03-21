@@ -3,6 +3,7 @@ use crate::schedule::schedule_jobs;
 use dotenvy::dotenv;
 use log::{error, info};
 use std::error::Error;
+use std::sync::Arc;
 use tokio::signal;
 
 mod fip_reader;
@@ -18,7 +19,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     info!("Loading env vars");
     dotenv().ok();
 
-    let twifip = Twifip::new().expect("Failed to initialize lastfm");
+    let twifip = Arc::new(Twifip::new().expect("Failed to initialize lastfm"));
 
     let _ = schedule_jobs(twifip).await;
 
