@@ -1,9 +1,10 @@
 use crate::twifip::Twifip;
 use crate::schedule::schedule_jobs;
 use dotenvy::dotenv;
-use log::info;
+use log::{error, info};
 use std::error::Error;
 use std::sync::Arc;
+use tokio::signal;
 
 mod fip_reader;
 mod twifip;
@@ -22,6 +23,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let _ = schedule_jobs(twifip).await;
 
-    info!("Shutting down...");
+    match signal::ctrl_c().await {
+        Ok(()) => {
+            info!("Shutting down...");
+        }
+        Err(err) => {
+            error!("Unable to listen for shutdown signal: {}", err);
+            // we also shut down in case of error
+        }
+    }
+
     Ok(())
 }
