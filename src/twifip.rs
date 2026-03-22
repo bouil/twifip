@@ -1,35 +1,27 @@
-use std::env;
+use crate::config::Config;
 use crate::track::Track;
+use crate::fip_reader::read_fip;
+use crate::track_store::TrackStore;
 use log::{error, info};
 use rustfm_scrobble_proxy::responses::ScrobbleResponse;
 use rustfm_scrobble_proxy::{Scrobble, Scrobbler};
 use std::error::Error;
-use crate::fip_reader::read_fip;
-use crate::track_store::TrackStore;
 
 pub struct Twifip {
-    scrobbler: Scrobbler,
-    track_store: TrackStore
+    pub(crate) scrobbler: Scrobbler,
+    pub(crate) track_store: TrackStore,
 }
 
 impl Twifip {
-    pub fn new() -> Result<Twifip, Box<dyn Error>> {
-        info!("Initializing Lastfm");
-        let username = env::var("LASTFM_USERNAME").map_err(|_| "Missing ENV variable LASTFM_USERNAME")?;
-        let password = env::var("LASTFM_PASSWORD").map_err(|_| "Missing ENV variable LASTFM_PASSWORD")?;
-        let api_key = env::var("LASTFM_API_KEY").map_err(|_| "Missing ENV variable LASTFM_API_KEY")?;
-        let api_secret = env::var("LASTFM_API_SECRET").map_err(|_| "Missing ENV variable LASTFM_API_SECRET")?;
-        info!("Loaded env vars. Using user {}", username);
-        let mut scrobbler = Scrobbler::new(&*api_key, &*api_secret);
-        scrobbler.authenticate_with_password(&*username, &*password)?;
-        let track_store = TrackStore::new();
-        Ok(Twifip {
-            scrobbler,
-            track_store
-        })
+    pub fn new(config: Config) -> Result<Twifip, Box<dyn Error>> {
+        info!("Initializing Lastfm. Using user {}", config.username);
+        let mut scrobbler = Scrobbler::new(&config.api_key, &config.api_secret);
+        scrobbler.authenticate_with_password(&config.username, &config.password)?;
+        let track_store = TrackStore::new(config.twifip_file);
+        Ok(Twifip { scrobbler, track_store })
     }
 
-    pub fn check_and_scrobble(self: &Self) {
+    pub fn check_and_scrobble(&self) {
         let track_result = read_fip();
 
         match track_result {
@@ -39,12 +31,12 @@ impl Twifip {
                 }
             }
             Err(err) => {
-                log::error!("{}", err)
+                error!("{}", err)
             }
         }
     }
 
-    fn scrobble_track(self: &Self, track: &Track) -> Result<ScrobbleResponse, Box<dyn Error>> {
+    fn scrobble_track(&self, track: &Track) -> Result<ScrobbleResponse, Box<dyn Error>> {
         info!("{:?}", track);
 
         let artist = track.artist.as_str();
@@ -80,16 +72,4 @@ mod tests {
     // Compile-time assertion: Twifip must be Send + 'static for spawn_blocking
     fn _assert_send_static<T: Send + 'static>() {}
     fn _assert_twifip_send_static() { _assert_send_static::<Twifip>(); }
-
-    #[test]
-    fn test_new_returns_err_when_env_vars_missing() {
-        env::remove_var("LASTFM_USERNAME");
-        env::remove_var("LASTFM_PASSWORD");
-        env::remove_var("LASTFM_API_KEY");
-        env::remove_var("LASTFM_API_SECRET");
-
-        let result = Twifip::new();
-        assert!(result.is_err());
-        assert!(result.err().unwrap().to_string().contains("LASTFM_USERNAME"));
-    }
 }

@@ -1,6 +1,5 @@
 use crate::track::Track;
 use log::info;
-use std::env;
 use std::fs::{read_to_string, write};
 use std::path::Path;
 
@@ -9,10 +8,9 @@ pub(crate) struct TrackStore {
 }
 
 impl TrackStore {
-    pub fn new() -> TrackStore {
-        TrackStore {
-            file: env::var("TWIFIP_FILE").expect("Missing ENV variable TWIFIP_FILE"),
-        }
+
+    pub fn new(file: String) -> TrackStore {
+        TrackStore { file }
     }
 
     /// check if the track is new or already seen, by checking in a cache file
