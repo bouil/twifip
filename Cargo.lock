@@ -1181,6 +1181,7 @@ dependencies = [
 name = "twifip"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "attohttpc 0.28.5",
  "dotenvy",
  "log",

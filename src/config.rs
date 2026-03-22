@@ -1,5 +1,5 @@
 use std::env;
-use std::error::Error;
+use anyhow::{Context, Result};
 
 pub struct Config {
     pub username: String,
@@ -11,13 +11,13 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_env() -> Result<Config, Box<dyn Error>> {
+    pub fn from_env() -> Result<Config> {
         Ok(Config {
-            username: env::var("LASTFM_USERNAME").map_err(|_| "Missing ENV variable LASTFM_USERNAME")?,
-            password: env::var("LASTFM_PASSWORD").map_err(|_| "Missing ENV variable LASTFM_PASSWORD")?,
-            api_key: env::var("LASTFM_API_KEY").map_err(|_| "Missing ENV variable LASTFM_API_KEY")?,
-            api_secret: env::var("LASTFM_API_SECRET").map_err(|_| "Missing ENV variable LASTFM_API_SECRET")?,
-            twifip_file: env::var("TWIFIP_FILE").map_err(|_| "Missing ENV variable TWIFIP_FILE")?,
+            username: env::var("LASTFM_USERNAME").context("Missing ENV variable LASTFM_USERNAME")?,
+            password: env::var("LASTFM_PASSWORD").context("Missing ENV variable LASTFM_PASSWORD")?,
+            api_key: env::var("LASTFM_API_KEY").context("Missing ENV variable LASTFM_API_KEY")?,
+            api_secret: env::var("LASTFM_API_SECRET").context("Missing ENV variable LASTFM_API_SECRET")?,
+            twifip_file: env::var("TWIFIP_FILE").context("Missing ENV variable TWIFIP_FILE")?,
             schedule_cron: env::var("TWIFIP_SCHEDULE_CRON")
                 .unwrap_or_else(|_| "0/20 * * ? * *".to_string()),
         })

@@ -2,10 +2,10 @@ use crate::config::Config;
 use crate::track::Track;
 use crate::fip_reader::read_fip;
 use crate::track_store::TrackStore;
+use anyhow::Result;
 use log::{error, info};
 use rustfm_scrobble_proxy::responses::ScrobbleResponse;
 use rustfm_scrobble_proxy::{Scrobble, Scrobbler};
-use std::error::Error;
 
 pub struct Twifip {
     pub(crate) scrobbler: Scrobbler,
@@ -13,7 +13,7 @@ pub struct Twifip {
 }
 
 impl Twifip {
-    pub fn new(config: Config) -> Result<Twifip, Box<dyn Error>> {
+    pub fn new(config: Config) -> Result<Twifip> {
         info!("Initializing Lastfm. Using user {}", config.username);
         let mut scrobbler = Scrobbler::new(&config.api_key, &config.api_secret);
         scrobbler.authenticate_with_password(&config.username, &config.password)?;
@@ -38,7 +38,7 @@ impl Twifip {
         }
     }
 
-    fn scrobble_track(&self, track: &Track) -> Result<ScrobbleResponse, Box<dyn Error>> {
+    fn scrobble_track(&self, track: &Track) -> Result<ScrobbleResponse> {
         info!("{:?}", track);
 
         let artist = track.artist.as_str();
@@ -61,7 +61,7 @@ impl Twifip {
             }
             Err(error) => {
                 error!("{}", error.to_string());
-                Err(Box::try_from(error).unwrap())
+                Err(anyhow::anyhow!("{}", error))
             }
         }
     }

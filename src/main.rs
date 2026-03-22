@@ -1,9 +1,9 @@
 use crate::config::Config;
 use crate::twifip::Twifip;
 use crate::schedule::schedule_jobs;
+use anyhow::Result;
 use dotenvy::dotenv;
 use log::{error, info};
-use std::error::Error;
 use std::sync::Arc;
 use tokio::signal;
 
@@ -16,7 +16,7 @@ mod track;
 mod track_store;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<()> {
     logging_setup::init_logging();
     info!("Loading env vars");
     dotenv().ok();

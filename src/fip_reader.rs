@@ -1,8 +1,8 @@
 use crate::track::Track;
+use anyhow::{bail, Result};
 use log::{error, info};
 use serde::Deserialize;
 use serde_json::from_str;
-use std::{error::Error, fmt};
 
 #[derive(Deserialize, Debug)]
 struct FipLine {
@@ -38,19 +38,6 @@ struct Fip {
     now: Now,
 }
 
-#[derive(Debug)]
-struct FipError;
-
-impl Error for FipError {
-
-}
-
-impl fmt::Display for FipError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Error reading or parsing")
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -74,30 +61,23 @@ mod tests {
     }
 }
 
-pub(crate) fn read_fip() -> Result<Track, Box<dyn Error>> {
+pub(crate) fn read_fip() -> Result<Track> {
     // check if https://api.radiofrance.fr/livemeta/live/7/transistor_musical_player contains interesting data too during the nights (Club Jazzafip, etc))
     let url = "https://www.radiofrance.fr/fip/api/live";
     let response = attohttpc::get(url).send()?;
     if response.is_success() {
         let text = response.text_utf8()?;
-        let fip_result: Result<Fip, serde_json::Error> = from_str(&text);
-        match fip_result {
-            Ok(fip) => {
-                info!("fip: {:?}", fip);
-                let track: Option<Track> = Track::create(
-                    fip.now.second_line.title,
-                    fip.now.first_line.title,
-                    fip.now.song.and_then(|s| s.release).and_then(|r| r.title),
-                    fip.now.start_time,
-                );
-                track.ok_or(FipError {}.into())
-            }
-            Err(error) => {
-                Err(error.into())
-            }
-        }
+        let fip: Fip = from_str(&text)?;
+        info!("fip: {:?}", fip);
+        let track: Option<Track> = Track::create(
+            fip.now.second_line.title,
+            fip.now.first_line.title,
+            fip.now.song.and_then(|s| s.release).and_then(|r| r.title),
+            fip.now.start_time,
+        );
+        track.ok_or_else(|| anyhow::anyhow!("FIP response was not a music track"))
     } else {
         error!("Invalid response from get {} : {}", url, response.status());
-        Err(FipError {}.into())
+        bail!("Invalid response from FIP API: {}", response.status());
     }
 }
