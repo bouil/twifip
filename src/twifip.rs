@@ -26,7 +26,7 @@ impl Twifip {
 
         match track_result {
             Ok(track) => {
-                if self.track_store.is_new_track(&track) {
+                if self.track_store.store_if_new(&track) {
                     let _ = self.scrobble_track(&track);
                 }
             }

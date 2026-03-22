@@ -13,8 +13,9 @@ impl TrackStore {
         TrackStore { file }
     }
 
-    /// check if the track is new or already seen, by checking in a cache file
-    pub fn is_new_track(&self, track: &Track) -> bool {
+    /// Store the track in the cache file if it differs from the last seen track.
+    /// Returns true if the track was new and stored, false if it was already cached.
+    pub fn store_if_new(&self, track: &Track) -> bool {
         let file = Path::new(self.file.as_str());
         let track_to_string = track.to_string();
         if file.exists() {
@@ -33,5 +34,45 @@ impl TrackStore {
             write(file, track_to_string).expect("Failed to write track file");
             true
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::track::Track;
+
+    fn make_track(title: &str) -> Track {
+        Track::create("Artist".to_string(), title.to_string(), None, 0).unwrap()
+    }
+
+    #[test]
+    fn test_store_if_new_returns_true_for_new_track() {
+        let path = "/tmp/twifip_test_new.txt";
+        let _ = std::fs::remove_file(path);
+        let store = TrackStore::new(path.to_string());
+
+        assert!(store.store_if_new(&make_track("Title A")));
+    }
+
+    #[test]
+    fn test_store_if_new_returns_false_for_same_track() {
+        let path = "/tmp/twifip_test_same.txt";
+        let _ = std::fs::remove_file(path);
+        let store = TrackStore::new(path.to_string());
+        let track = make_track("Title B");
+
+        store.store_if_new(&track);
+        assert!(!store.store_if_new(&track));
+    }
+
+    #[test]
+    fn test_store_if_new_returns_true_for_changed_track() {
+        let path = "/tmp/twifip_test_changed.txt";
+        let _ = std::fs::remove_file(path);
+        let store = TrackStore::new(path.to_string());
+
+        store.store_if_new(&make_track("Title C"));
+        assert!(store.store_if_new(&make_track("Title D")));
     }
 }
