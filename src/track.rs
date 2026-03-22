@@ -52,12 +52,12 @@ impl Track {
     fn fix_album(album: String) -> String {
         let space_position = album.rfind(' ');
         space_position
-            .filter(|position| position < &(album.len() - 4))
             .and_then(|position| {
                 let end_part = &album[position + 1..];
-                match end_part.parse::<usize>() {
-                    Ok(_) => Some(String::from(&album[0..position])),
-                    Err(_) => None,
+                if end_part.len() == 4 {
+                    end_part.parse::<u16>().ok().map(|_| String::from(&album[0..position]))
+                } else {
+                    None
                 }
             })
             .unwrap_or(album)
@@ -153,5 +153,17 @@ mod tests {
         )
         .unwrap();
         assert_eq!(track.album.clone().unwrap().to_string(), "Album 202");
+    }
+
+    #[test]
+    fn test_create_track_with_five_digit_number_not_stripped() {
+        let track = Track::create(
+            String::from("Artist"),
+            String::from("Title"),
+            Some(String::from("Album 20201")),
+            1740168451,
+        )
+        .unwrap();
+        assert_eq!(track.album.clone().unwrap().to_string(), "Album 20201");
     }
 }
