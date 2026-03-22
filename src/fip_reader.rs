@@ -80,7 +80,7 @@ pub(crate) fn read_fip() -> Result<Track, Box<dyn Error>> {
     let response = attohttpc::get(url).send()?;
     if response.is_success() {
         let text = response.text_utf8()?;
-        let fip_result: Result<Fip, serde_json::Error> = from_str(&*text);
+        let fip_result: Result<Fip, serde_json::Error> = from_str(&text);
         match fip_result {
             Ok(fip) => {
                 info!("fip: {:?}", fip);
