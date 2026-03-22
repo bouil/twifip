@@ -22,6 +22,11 @@ impl Display for Track {
     }
 }
 
+const FILLER_BONNE_NUIT: &str = "BONNE NUIT SUR FIP";
+const FILLER_ACTUALITE: &str = "FIP ACTUALITE";
+const FILLER_ARTIST: &str = "La radio la plus éclectique du monde";
+const FILLER_TITLE_DIRECT: &str = "Le direct";
+
 impl Track {
     pub(crate) fn create(
         artist: String,
@@ -29,10 +34,10 @@ impl Track {
         album: Option<String>,
         start_time: i64,
     ) -> Option<Track> {
-        if title.contains("BONNE NUIT SUR FIP")
-            || title.contains("FIP ACTUALITE")
-            || (artist.eq("La radio la plus éclectique du monde")
-                && title.eq("Le direct")
+        if title.contains(FILLER_BONNE_NUIT)
+            || title.contains(FILLER_ACTUALITE)
+            || (artist.eq(FILLER_ARTIST)
+                && title.eq(FILLER_TITLE_DIRECT)
                 && album.is_none())
         {
             // ignore track
