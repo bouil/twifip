@@ -1,12 +1,11 @@
 use crate::config::Config;
-use crate::track::Track;
 use crate::fip_reader::read_fip;
+use crate::track::Track;
 use crate::track_store::TrackStore;
 use anyhow::Result;
 use log::{error, info};
 use rustfm_scrobble_proxy::responses::ScrobbleResponse;
 use rustfm_scrobble_proxy::{Scrobble, Scrobbler};
-use rustfm_scrobble_proxy::responses::values::CorrectableString;
 
 pub struct Twifip {
     pub(crate) scrobbler: Scrobbler,
