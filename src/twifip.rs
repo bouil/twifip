@@ -6,10 +6,12 @@ use anyhow::Result;
 use log::{error, info};
 use rustfm_scrobble_proxy::responses::ScrobbleResponse;
 use rustfm_scrobble_proxy::{Scrobble, Scrobbler};
+use rustfm_scrobble_proxy::responses::values::CorrectableString;
 
 pub struct Twifip {
     pub(crate) scrobbler: Scrobbler,
     pub(crate) track_store: TrackStore,
+    pub(crate) dry_run: bool,
 }
 
 impl Twifip {
@@ -18,7 +20,7 @@ impl Twifip {
         let mut scrobbler = Scrobbler::new(&config.api_key, &config.api_secret);
         scrobbler.authenticate_with_password(&config.username, &config.password)?;
         let track_store = TrackStore::new(config.twifip_file);
-        Ok(Twifip { scrobbler, track_store })
+        Ok(Twifip { scrobbler, track_store, dry_run: config.dry_run })
     }
 
     pub fn check_and_scrobble(&self) {
@@ -27,6 +29,7 @@ impl Twifip {
         match track_result {
             Ok(track) => {
                 match self.track_store.store_if_new(&track) {
+                    Ok(true) if self.dry_run => info!("[dry-run] would scrobble: {:?}", track),
                     Ok(true) => { let _ = self.scrobble_track(&track); }
                     Ok(false) => {}
                     Err(err) => error!("Failed to access track cache: {}", err),

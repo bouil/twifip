@@ -53,6 +53,7 @@ mod tests {
         let twifip = Arc::new(Twifip {
             scrobbler: Scrobbler::new("test_key", "test_secret"),
             track_store: TrackStore::new("/tmp/twifip_test.txt".to_string()),
+            dry_run: true,
         });
 
         let mut sched = build_scheduler(twifip, "0/20 * * ? * *".to_string()).await.unwrap();

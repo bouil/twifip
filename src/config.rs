@@ -8,6 +8,8 @@ pub struct Config {
     pub api_secret: String,
     pub twifip_file: String,
     pub schedule_cron: String,
+    /// When true, tracks are detected but not actually scrobbled to Last.fm
+    pub dry_run: bool,
 }
 
 impl Config {
@@ -20,6 +22,7 @@ impl Config {
             twifip_file: env::var("TWIFIP_FILE").context("Missing ENV variable TWIFIP_FILE")?,
             schedule_cron: env::var("TWIFIP_SCHEDULE_CRON")
                 .unwrap_or_else(|_| "0/20 * * ? * *".to_string()),
+            dry_run: env::var("TWIFIP_DRY_RUN").is_ok_and(|v| v == "true"),
         })
     }
 }
