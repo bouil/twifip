@@ -21,7 +21,7 @@ pub(crate) async fn build_scheduler(twifip: Arc<Twifip>, cron_expression: String
     // Add code to be run during/after shutdown
     sched.set_shutdown_handler(Box::new(|| {
         Box::pin(async move {
-            println!("Shut down done");
+            info!("Shut down done");
         })
     }));
 
