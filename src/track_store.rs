@@ -1,6 +1,7 @@
 use crate::track::Track;
 use log::info;
 use std::fs::{read_to_string, write};
+use std::io;
 use std::path::Path;
 
 pub(crate) struct TrackStore {
@@ -14,25 +15,25 @@ impl TrackStore {
     }
 
     /// Store the track in the cache file if it differs from the last seen track.
-    /// Returns true if the track was new and stored, false if it was already cached.
-    pub fn store_if_new(&self, track: &Track) -> bool {
+    /// Returns Ok(true) if the track was new and stored, Ok(false) if already cached.
+    pub fn store_if_new(&self, track: &Track) -> Result<bool, io::Error> {
         let file = Path::new(self.file.as_str());
         let track_to_string = track.to_string();
         if file.exists() {
             info!("File already exists: {}", file.display());
-            let cached: String = read_to_string(&file).expect("Failed to read track file");
+            let cached: String = read_to_string(file)?;
             if cached.eq(&track_to_string) {
                 info!("Cached Track is the same");
-                false
+                Ok(false)
             } else {
                 info!("Cached Track is different");
-                write(file, track_to_string).expect("Failed to write track file");
-                true
+                write(file, track_to_string)?;
+                Ok(true)
             }
         } else {
             info!("File does not exist: {}, creating cache.", file.display());
-            write(file, track_to_string).expect("Failed to write track file");
-            true
+            write(file, track_to_string)?;
+            Ok(true)
         }
     }
 }
@@ -52,7 +53,7 @@ mod tests {
         let _ = std::fs::remove_file(path);
         let store = TrackStore::new(path.to_string());
 
-        assert!(store.store_if_new(&make_track("Title A")));
+        assert!(store.store_if_new(&make_track("Title A")).unwrap());
     }
 
     #[test]
@@ -62,8 +63,8 @@ mod tests {
         let store = TrackStore::new(path.to_string());
         let track = make_track("Title B");
 
-        store.store_if_new(&track);
-        assert!(!store.store_if_new(&track));
+        store.store_if_new(&track).unwrap();
+        assert!(!store.store_if_new(&track).unwrap());
     }
 
     #[test]
@@ -72,7 +73,13 @@ mod tests {
         let _ = std::fs::remove_file(path);
         let store = TrackStore::new(path.to_string());
 
-        store.store_if_new(&make_track("Title C"));
-        assert!(store.store_if_new(&make_track("Title D")));
+        store.store_if_new(&make_track("Title C")).unwrap();
+        assert!(store.store_if_new(&make_track("Title D")).unwrap());
+    }
+
+    #[test]
+    fn test_store_if_new_returns_err_on_bad_path() {
+        let store = TrackStore::new("/no/such/dir/twifip_test.txt".to_string());
+        assert!(store.store_if_new(&make_track("Title E")).is_err());
     }
 }
