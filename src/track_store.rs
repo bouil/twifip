@@ -1,8 +1,10 @@
 use crate::track::Track;
+use crate::TwifipError;
 use log::info;
 use std::fs::{read_to_string, write};
-use std::io;
 use std::path::Path;
+
+pub type Result<T> = std::result::Result<T, TwifipError>;
 
 pub(crate) struct TrackStore {
     file: String,
@@ -16,7 +18,7 @@ impl TrackStore {
 
     /// Store the track in the cache file if it differs from the last seen track.
     /// Returns Ok(true) if the track was new and stored, Ok(false) if already cached.
-    pub fn store_if_new(&self, track: &Track) -> Result<bool, io::Error> {
+    pub fn store_if_new(&self, track: &Track) -> Result<bool> {
         let file = Path::new(self.file.as_str());
         let track_to_string = track.to_string();
         if file.exists() {
@@ -32,7 +34,7 @@ impl TrackStore {
             }
         } else {
             info!("File does not exist: {}, creating cache.", file.display());
-            write(file, track_to_string)?;
+            write(file, track_to_string).map_err(|e| TwifipError::TrackCacheError(e.to_string()))?;
             Ok(true)
         }
     }

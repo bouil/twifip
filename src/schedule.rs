@@ -1,19 +1,23 @@
 use std::sync::Arc;
-use log::info;
+use log::{error, info};
 use tokio::task;
-use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
-use crate::twifip::Twifip;
+use tokio_cron_scheduler::{Job, JobScheduler};
+use crate::twifip::{Twifip, Result};
+use crate::TwifipError;
 
-pub async fn schedule_jobs(twifip: Arc<Twifip>, cron_expression: String) -> Result<(), JobSchedulerError> {
-    let sched = build_scheduler(twifip, cron_expression).await?;
+pub async fn schedule_jobs(twifip: Arc<Twifip>, cron_expression: String) -> Result<()> {
+    let sched = build_scheduler(twifip, cron_expression).await
+        .map_err(|e| TwifipError::SchedulerError(e.to_string()))?;
 
     // Feature 'signal' must be enabled
     sched.shutdown_on_ctrl_c();
 
     sched.start().await
+        .map_err(|e| TwifipError::SchedulerError(e.to_string()))?;
+    Ok(())
 }
 
-pub(crate) async fn build_scheduler(twifip: Arc<Twifip>, cron_expression: String) -> Result<JobScheduler, JobSchedulerError> {
+pub(crate) async fn build_scheduler(twifip: Arc<Twifip>, cron_expression: String) -> Result<JobScheduler> {
     info!("Scheduling jobs");
 
     let mut sched = JobScheduler::new().await?;
@@ -30,12 +34,15 @@ pub(crate) async fn build_scheduler(twifip: Arc<Twifip>, cron_expression: String
         .add(Job::new_async(cron_expression, move |_uuid, _l| {
             let twifip = Arc::clone(&twifip);
             Box::pin(async move {
-                task::spawn_blocking(move || twifip.check_and_scrobble())
+                if let Err(e) = task::spawn_blocking(move || twifip.check_and_scrobble())
                     .await
-                    .ok();
+                {
+                    error!("Error in scheduled task: {}", e);
+                }
             })
         })?)
-        .await?;
+        .await
+        .map_err(|e| TwifipError::SchedulerError(e.to_string()))?;
 
     info!("Done scheduling jobs");
     Ok(sched)

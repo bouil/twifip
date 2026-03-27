@@ -8,12 +8,15 @@ use std::sync::Arc;
 use tokio::signal;
 
 mod config;
+mod error;
 mod fip_reader;
 mod twifip;
 mod logging_setup;
 mod schedule;
 mod track;
 mod track_store;
+
+pub use error::TwifipError;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -25,7 +28,10 @@ async fn main() -> Result<()> {
     let cron_expression = config.schedule_cron.clone();
     let twifip = Arc::new(Twifip::new(config).expect("Failed to initialize lastfm"));
 
-    let _ = schedule_jobs(twifip, cron_expression).await;
+    if let Err(e) = schedule_jobs(twifip, cron_expression).await {
+        error!("Failed to schedule jobs: {}", e);
+        return Err(anyhow::anyhow!("Scheduler error: {}", e));
+    }
 
     match signal::ctrl_c().await {
         Ok(()) => {

@@ -1,7 +1,9 @@
 use crate::track::Track;
-use anyhow::{bail, Result};
+use crate::TwifipError;
 use log::{error, info};
 use serde::Deserialize;
+
+pub type Result<T> = std::result::Result<T, TwifipError>;
 
 #[derive(Deserialize, Debug)]
 struct Release {
@@ -160,9 +162,9 @@ pub(crate) fn read_fip() -> Result<Track> {
             fip.now.song.and_then(|s| s.release).and_then(|r| r.title),
             fip.now.start_time,
         );
-        track.ok_or_else(|| anyhow::anyhow!("FIP response was not a music track"))
+        track.ok_or_else(|| TwifipError::TrackFilterError("FIP response was not a music track".to_string()))
     } else {
         error!("Invalid response from get {} : {}", url, response.status());
-        bail!("Invalid response from FIP API: {}", response.status());
+        return Err(TwifipError::FipApiError(format!("Invalid response from FIP API: {}", response.status())));
     }
 }
