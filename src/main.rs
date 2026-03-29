@@ -18,6 +18,9 @@ mod track_store;
 
 pub use error::TwifipError;
 
+#[cfg(test)]
+mod tests;
+
 #[tokio::main]
 async fn main() -> Result<()> {
     logging_setup::init_logging();

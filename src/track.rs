@@ -43,7 +43,7 @@ impl Track {
             // ignore track
             None
         } else {
-            let fixed_album = album.map(|a| Self::fix_album(a));
+            let fixed_album = album.map(Self::fix_album);
             Some(Track {
                 artist,
                 title,

@@ -165,6 +165,6 @@ pub(crate) fn read_fip() -> Result<Track> {
         track.ok_or_else(|| TwifipError::TrackFilterError("FIP response was not a music track".to_string()))
     } else {
         error!("Invalid response from get {} : {}", url, response.status());
-        return Err(TwifipError::FipApiError(format!("Invalid response from FIP API: {}", response.status())));
+        Err(TwifipError::FipApiError(format!("Invalid response from FIP API: {}", response.status())))
     }
 }
